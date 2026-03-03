@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <title>Editor</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
+    <style>
+* {
+  box-sizing: border-box;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  font-family: 'Inter', sans-serif;
+}
+
+#monaco-container, .tab-rename-input {
+  -webkit-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
+
+body {
+  font-size: 14px;
+  margin: 0;
+  padding: 0;
+    background-color: #011627;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+.window-drag-region {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 34px;
+    -webkit-app-region: drag;
+    z-index: 9999;
+}
+
+.v300_570 {
+  width: 921px;
+  height: 519px;
+  background-color: #011627; 
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: cover;
+  opacity: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.v249_603 {
+  width: 921px;
+  height: 519px;
+  background: rgba(1, 40, 57, 0.7);
+  opacity: 1;
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  border: 1.2px solid rgba(67, 178, 255, 1);
+  overflow: hidden;
+}
+
+.v249_604 {
+  width: 30px;
+  height: 30px;
+  background: url("https://i.ibb.co/99R651vp/wavegirl.png") no-repeat center/contain;
+  position: absolute;
+  top: 30px;
+  left: 23px;
+}
+.v249_605 {
+  color: white;
+  position: absolute;
+  top: 30px;
+  left: 63px;
+  font-weight: 700;
+  font-size: 24px;
+}
+.v249_606 {
+  width: 405px;
+  height: 26px;
+  background: rgba(0, 139, 210, 1);
+  position: absolute; top: 32px; left: 144px; border-radius: 5px;
+}
+.v249_607 { color: #fff; position: absolute; top: 37px; left: 155px; font-weight: 700; font-size: 13px; }
+.v249_608 { color: #fff; position: absolute; top: 35px; left: 788px; font-weight: 700; font-size: 16px; }
+.v249_609 { width: 14px; height: 14px; background: rgba(234,135,120,1); position: absolute; top: 38px; left: 766px; border-radius: 50%; }
+
+#tab-outer-container {
+    position: absolute;
+    top: 74px;
+    left: 85px;
+    width: 610px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+}
+
+#tab-list {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+    height: 100%;
+}
+
+.tab-item {
+    height: 32px;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 16px;
+    color: #fff;
+    transition: background-color 0.4s ease, width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    flex-shrink: 0;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.tab-item.active {
+    width: 155px;
+    background: #009AF5;
+    padding: 0 10px;
+}
+
+.tab-item.inactive {
+    width: 135px;
+    background: #326282;
+    padding: 0 10px;
+    justify-content: center;
+}
+
+.tab-text {
+    width: 100%;
+    text-align: center;
+    pointer-events: none;
+    transition: text-align 0.3s ease;
+    overflow: hidden;
+}
+
+.tab-item.active .tab-text {
+    text-align: left;
+    flex: 1;
+}
+
+.tab-rename-input {
+    background: transparent;
+    border: none;
+    color: white;
+    font-weight: 600;
+    font-size: 16px;
+    width: 100%;
+    outline: none;
+    text-align: center;
+}
+
+.tab-item.active .tab-rename-input {
+    text-align: left;
+}
+
+.close-icon-container {
+    width: 0;
+    height: 27px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.4s ease, width 0.4s cubic-bezier(0.4, 0, 0.2, 1), margin-left 0.4s ease;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.active .close-icon-container {
+    width: 27px;
+    opacity: 1;
+    pointer-events: auto;
+    margin-left: 2px;
+}
+
+.v249_635, .v249_636 { 
+  position: absolute; 
+  top: 80px; 
+  width: 19px; 
+  height: 19px; 
+  background: transparent; 
+  border-radius: 2px; 
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+}
+.v249_635 { left: 23px; }
+.v249_636 { left: 43px; }
+
+#add-tab-btn { 
+    width: 24px; 
+    height: 24px; 
+    border-radius: 4px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    margin-left: 5px;
+}
+
+.v249_628 { 
+    width: 674px; 
+    height: 330px; 
+    background: transparent; 
+    position: absolute; 
+    top: 114px;
+    left: 23px; 
+    border-radius: 0px; 
+    overflow: hidden; 
+}
+
+.v249_750 { width: 194px; height: 33px; background: rgba(19, 38, 54, 1); position: absolute; top: 73px; left: 705px; border: 1px solid rgba(47, 68, 90, 1); border-radius: 4px; }
+.v249_752 { color: rgba(218,151,100,1); position: absolute; top: 79px; left: 715px; font-weight: 600; font-size: 17px; z-index: 1; pointer-events: none; }
+.v249_754 { width: 194px; height: 33px; background: rgba(19, 38, 54, 1); position: absolute; top: 117px; left: 705px; border: 1px solid rgba(47, 68, 90, 1); border-radius: 4px; }
+.v249_755 { color: rgba(113,165,228,1); position: absolute; top: 123px; left: 715px; font-weight: 600; font-size: 17px; z-index: 1; pointer-events: none; }
+
+.btn-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  z-index: 2;
+  transition: background-color 0.2s;
+  user-select: none;
+}
+.btn-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+@keyframes smoothBounce {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.92); } 
+  100% { transform: scale(1); }
+}
+.animate-content-bounce {
+  animation: smoothBounce 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.v249_613 { width: 117px; height: 40px; background: rgba(0, 174, 250, 1); position: absolute; top: 454px; left: 38px; border: 1px solid rgba(92, 177, 230, 1); border-radius: 4px; }
+.v249_615 { width: 117px; height: 40px; background: rgba(19, 38, 54, 1); position: absolute; top: 454px; left: 173px; border: 1px solid rgba(47, 68, 90, 1); border-radius: 4px; }
+.v249_621 { width: 117px; height: 40px; background: rgba(19, 38, 54, 1); position: absolute; top: 454px; left: 308px; border: 1px solid rgba(47, 68, 90, 1); border-radius: 4px; }
+.v249_623 { width: 117px; height: 40px; background: rgba(19, 38, 54, 1); position: absolute; top: 454px; left: 443px; border: 1px solid rgba(47, 68, 90, 1); border-radius: 4px; }
+.v249_625 { width: 192px; height: 40px; background: rgba(19, 38, 54, 1); position: absolute; top: 454px; left: 705px; border: 1px solid rgba(47, 68, 90, 1); border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="window-drag-region" aria-hidden="true"></div>
+    <div class="v300_570">
+        <div class="v249_603"></div>
+        <div class="v249_604"></div>
+        <span class="v249_605">Editor</span>
+        <div class="v249_606"></div>
+        <span class="v249_607">Roblox Version: VersionNumberHere</span>
+        <span id="mac-status-text" class="v249_608">Disconnected</span>
+        <div id="mac-status-dot" class="v249_609"></div>
+        <div class="v249_635" id="scroll-left-btn">
+            <svg width="19" height="19" viewBox="0 0 19 19" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <mask id="m1" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="19" height="19"><rect width="19" height="19" fill="#D9D9D9"/></mask>
+                <g mask="url(#m1)"><path d="M2.80964 9.49954L8.62839 15.3183C8.8263 15.5162 8.92196 15.7471 8.91536 16.011C8.90877 16.2749 8.80651 16.5058 8.60859 16.7037C8.41068 16.9016 8.17977 17.0006 7.91589 17.0006C7.652 17.0006 7.42109 16.9016 7.22318 16.7037L1.12734 10.6277C0.96901 10.4693 0.85026 10.2912 0.771094 10.0933C0.691927 9.89537 0.652344 9.69746 0.652344 9.49954C0.652344 9.30162 0.691927 9.10371 0.771094 8.90579C0.85026 8.70787 0.96901 8.52975 1.12734 8.37141L7.22318 2.27558C7.42109 2.07766 7.6553 1.982 7.92578 1.9886C8.19627 1.9952 8.43047 2.09745 8.62839 2.29537C8.8263 2.49329 8.92526 2.72419 8.92526 2.98808C8.92526 3.25197 8.8263 3.48287 8.62839 3.68079L2.80964 9.49954Z" fill="white"/></g>
+            </svg>
+        </div>
+        <div class="v249_636" id="scroll-right-btn">
+            <svg width="19" height="19" viewBox="0 0 19 19" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <mask id="m2" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="19" height="19"><rect width="19" height="19" transform="matrix(-1 0 0 1 19 0)" fill="#D9D9D9"/></mask>
+                <g mask="url(#m2)"><path d="M16.1904 9.49954L10.3716 15.3183C10.1737 15.5162 10.078 15.7471 10.0846 16.011C10.0912 16.2749 10.1935 16.5058 10.3914 16.7037C10.5893 16.9016 10.8202 17.0006 11.0841 17.0006C11.348 17.0006 11.5789 16.9016 11.7768 16.7037L17.8727 10.6277C18.031 10.4693 18.1497 10.2912 18.2289 10.0933C18.3081 9.89537 18.3477 9.69746 18.3477 9.49954C18.3477 9.30162 18.3081 9.10371 18.2289 8.90579C18.1497 8.70787 18.031 8.52975 17.8727 8.37141L11.7768 2.27558C11.5789 2.07766 11.3447 1.982 11.0742 1.9886C10.8037 1.9952 10.5695 2.09745 10.3716 2.29537C10.1737 2.49329 10.0747 2.72419 10.0747 2.98808C10.0747 3.25197 10.1737 3.48287 10.3716 3.68079L16.1904 9.49954Z" fill="white"/></g>
+            </svg>
+        </div>
+        <div id="tab-outer-container">
+            <div id="tab-list"></div>
+            <div id="add-tab-btn-template" style="display:none;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <mask id="m3" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="24" height="24"><rect width="24" height="24" fill="#D9D9D9"/></mask>
+                    <g mask="url(#m3)"><path d="M10.4254 13.5749H4.15039V10.4249H10.4254V4.1499H13.5754V10.4249H19.8504V13.5749H13.5754V19.8499H10.4254V13.5749Z" fill="#F9F9F9"/></g>
+                </svg>
+            </div>
+        </div>
+        <div class="v249_750"></div>
+        <span class="v249_752">Workspace</span>
+        <div class="v249_754"></div>
+        <span class="v249_755">Favourites</span>
+        <div class="v249_628" id="monaco-container"></div>
+        <div class="v249_613 btn-container action-btn"><div class="btn-inner"><svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><mask id="m4" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="32" height="32"><rect width="32" height="32" transform="matrix(-1 0 0 1 32 0)" fill="#D9D9D9"/></mask><g mask="url(#m4)"><path d="M10.6673 25.3332L25.334 15.9998L10.6673 6.6665V25.3332ZM13.334 20.4665V11.5332L20.334 15.9998L13.334 20.4665Z" fill="white"/></g></svg><span>Execute</span></div></div>
+        <div class="v249_615 btn-container action-btn"><div class="btn-inner"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><mask id="m5" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="24" height="24"><rect width="24" height="24" fill="#D9D9D9"/></mask><g mask="url(#m5)"><path d="M17.2128 18H21.9628V20H15.2128L17.2128 18ZM4.71277 20L2.58777 17.875C2.20443 17.4917 2.0086 17.0167 2.00027 16.45C1.99193 15.8833 2.17943 15.4 2.56277 15L13.5628 3.6C13.9461 3.2 14.4169 3 14.9753 3C15.5336 3 16.0044 3.19167 16.3878 3.575L21.3628 8.55C21.7461 8.93333 21.9378 9.40833 21.9378 9.975C21.9378 10.5417 21.7461 11.0167 21.3628 11.4L12.9628 20H4.71277ZM12.1128 18L19.9628 9.95L15.0128 5L3.96277 16.4L5.56277 18H12.1128Z" fill="white"/></g></svg><span>Clear</span></div></div>
+        <div class="v249_621 btn-container action-btn"><div class="btn-inner"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><mask id="m6" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="24" height="24"><rect width="24" height="24" fill="#D9D9D9"/></mask><g mask="url(#m6)"><path d="M16 11V6H18V11H16ZM11 17.9C10.4167 17.7333 9.9375 17.4083 9.5625 16.925C9.1875 16.4417 9 15.8833 9 15.25V6H11V17.9ZM11.75 22C10.0167 22 8.54167 21.3917 7.325 20.175C6.10833 18.9583 5.5 17.4833 5.5 15.75V6.5C5.5 5.25 5.9375 4.1875 6.8125 3.3125C7.6875 2.4375 8.75 2 10 2C11.25 2 12.3125 2.4375 13.1875 3.3125C14.0625 4.1875 14.5 5.25 14.5 6.5V14H12.5V6.5C12.4833 5.8 12.2375 5.20833 11.7625 4.725C11.2875 4.24167 10.7 4 10 4C9.3 4 8.70833 4.24167 8.225 4.725C7.74167 5.20833 7.5 5.8 7.5 6.5V15.75C7.48333 16.9333 7.89167 17.9375 8.725 18.7625C9.55833 19.5875 10.5667 20 11.75 20C12.1667 20 12.5625 19.9458 12.9375 19.8375C13.3125 19.7292 13.6667 19.5667 14 19.35V21.575C13.65 21.7083 13.2875 21.8125 12.9125 21.8875C12.5375 21.9625 12.15 22 11.75 22ZM16 21V18H13V16H16V13H18V16H21V18H18V21H16Z" fill="white"/></g></svg><span>Open File</span></div></div>
+        <div class="v249_623 btn-container action-btn"><div class="btn-inner"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><mask id="m7" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="24" height="24"><rect width="24" height="24" fill="#D9D9D9"/></mask><g mask="url(#m7)"><path d="M12 16L7 11L8.4 9.55L11 12.15V4H13V12.15L15.6 9.55L17 11L12 16ZM6 20C5.45 20 4.97917 19.8042 4.5875 19.4125C4.19583 19.0208 4 18.55 4 18V15H6V18H18V15H20V18C20 18.55 19.8042 19.0208 19.4125 19.4125C19.0208 19.8042 18.55 20 18 20H6Z" fill="white"/></g></svg><span>Save File</span></div></div>
+        <div class="v249_625 btn-container action-btn"><div class="btn-inner"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><mask id="m8" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="24" height="24"><rect width="24" height="24" fill="#D9D9D9"/></mask><g mask="url(#mask0_kill)"><path d="M12.4 15.35L8.65 11.6L16.95 3.3C17.15 3.1 17.3875 3 17.6625 3C17.9375 3 18.175 3.1 18.375 3.3L20.7 5.625C20.9 5.825 21 6.0625 21 6.3375C21 6.6125 20.9 6.85 20.7 7.05L12.4 15.35ZM11 21L13 19H22V21H11ZM5.075 21C4.30833 21 3.57083 20.85 2.8625 20.55C2.15417 20.25 1.53333 19.8333 1 19.3L7.625 12.7L10.225 15.3C10.4583 15.5333 10.6417 15.8 10.775 16.1C10.9083 16.4 10.975 16.7167 10.975 17.05C10.975 17.3833 10.9083 17.7042 10.775 18.0125C10.6417 18.3208 10.4583 18.5917 10.225 18.825L9.75 19.3C9.21667 19.8333 8.59583 20.25 7.8875 20.55C7.17917 20.85 6.44167 21 5.675 21H5.075Z" fill="white"/></g></svg><span>Kill Roblox</span></div></div>
+    </div>
+
+    <script>
+        let tabs = [{ id: 1, name: "Untitled Tab", content: "-- Wave interface is real." }];
+        let activeTabId = 1;
+        let editingTabId = null;
+
+        require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' }});
+        require(['vs/editor/editor.main'], function() {
+            monaco.editor.defineTheme('wave-transparent', {
+                base: 'vs-dark', inherit: true, rules: [],
+                colors: {
+                    'editor.background': '#00000000', 
+                    'editor.lineHighlightBackground': '#00000000',
+                    'editor.lineHighlightBorder': '#00000000',
+                }
+            });
+
+            window.editor = monaco.editor.create(document.getElementById('monaco-container'), {
+                value: tabs[0].content,
+                language: 'lua',
+                theme: 'wave-transparent',
+                automaticLayout: true,
+                minimap: { enabled: false },
+                fontSize: 14,
+                fontFamily: 'Inter, monospace',
+                lineNumbers: 'on',
+                roundedSelection: true,
+                scrollBeyondLastLine: false,
+                readOnly: false,
+                cursorStyle: 'line',
+                cursorBlinking: 'smooth',
+                cursorSmoothCaretAnimation: true,
+                smoothScrolling: true,
+                renderWhitespace: 'none',
+                scrollbar: { vertical: 'visible', horizontal: 'visible' } 
+            });
+
+            renderTabs();
+        });
+
+        function renderTabs() {
+            const tabList = document.getElementById('tab-list');
+            if (!tabList) return;
+            tabList.innerHTML = '';
+
+            tabs.forEach(tab => {
+                const tabEl = document.createElement('div');
+                tabEl.className = `tab-item ${tab.id === activeTabId ? 'active' : 'inactive'}`;
+                
+                tabEl.onclick = () => { if(editingTabId !== tab.id) switchTab(tab.id); };
+                tabEl.oncontextmenu = (e) => {
+                    e.preventDefault();
+                    startRename(tab.id);
+                };
+
+                if (editingTabId === tab.id) {
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.className = 'tab-rename-input';
+                    input.value = tab.name;
+                    input.maxLength = 15;
+                    input.onblur = () => finishRename(tab.id, input.value);
+                    input.onkeydown = (ev) => { if(ev.key === 'Enter') finishRename(tab.id, input.value); };
+                    tabEl.appendChild(input);
+                    setTimeout(() => input.focus(), 50);
+                } else {
+                    const textSpan = document.createElement('span');
+                    textSpan.className = 'tab-text';
+                    textSpan.textContent = tab.name;
+                    tabEl.appendChild(textSpan);
+                }
+
+                const closeContainer = document.createElement('div');
+                closeContainer.className = 'close-icon-container';
+                closeContainer.innerHTML = `
+                    <svg width="27" height="27" viewBox="0 0 27 27" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <mask id="mc_${tab.id}" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="27" height="27"><rect width="27" height="27" fill="#D9D9D9"/></mask>
+                        <g mask="url(#mc_${tab.id})"><path d="M13.5012 15.0754L10.2198 18.366C10.0123 18.5723 9.74817 18.6754 9.42755 18.6754C9.10692 18.6754 8.84292 18.5723 8.63555 18.366C8.4293 18.1598 8.32617 17.8973 8.32617 17.5785C8.32617 17.2598 8.4293 16.9973 8.63555 16.791L11.9262 13.5004L8.63555 10.2472C8.4293 10.0396 8.32617 9.77551 8.32617 9.45489C8.32617 9.13426 8.4293 8.87027 8.63555 8.66289C8.8418 8.45664 9.1043 8.35352 9.42305 8.35352C9.7418 8.35352 10.0043 8.45664 10.2105 8.66289L13.5012 11.9535L16.7544 8.66289C16.962 8.45664 17.226 8.35352 17.5467 8.35352C17.8673 8.35352 18.1313 8.45664 18.3387 8.66289C18.5637 8.88789 18.6762 9.15508 18.6762 9.46445C18.6762 9.77383 18.5637 10.0316 18.3387 10.2379L15.048 13.5004L18.3387 16.7817C18.5449 16.9893 18.648 17.2534 18.648 17.574C18.648 17.8946 18.5449 18.1586 18.3387 18.366C18.1137 18.591 17.8465 18.7035 17.5371 18.7035C17.2277 18.7035 16.9699 18.591 16.7637 18.366L13.5012 15.0754Z" fill="white"/></g>
+                    </svg>
+                `;
+                closeContainer.onclick = (e) => { e.stopPropagation(); closeTab(tab.id); };
+                tabEl.appendChild(closeContainer);
+                tabList.appendChild(tabEl);
+            });
+            
+            const addBtn = document.createElement('div');
+            addBtn.id = 'add-tab-btn';
+            addBtn.innerHTML = document.getElementById('add-tab-btn-template').innerHTML;
+            addBtn.onclick = addTab;
+            tabList.appendChild(addBtn);
+        }
+
+        function startRename(id) {
+            editingTabId = id;
+            renderTabs();
+        }
+
+        function finishRename(id, newName) {
+            if (newName.trim()) {
+                const tab = tabs.find(t => t.id === id);
+                if (tab) tab.name = newName.trim();
+            }
+            editingTabId = null;
+            renderTabs();
+        }
+
+        function switchTab(id) {
+            if (activeTabId === id) return;
+            const currentTab = tabs.find(t => t.id === activeTabId);
+            if (currentTab) currentTab.content = window.editor.getValue();
+            activeTabId = id;
+            const newTab = tabs.find(t => t.id === id);
+            if (window.editor && newTab) window.editor.setValue(newTab.content);
+            renderTabs();
+            scrollToActiveTab();
+        }
+
+        function addTab() {
+            if (window.editor) {
+                const currentTab = tabs.find(t => t.id === activeTabId);
+                if (currentTab) currentTab.content = window.editor.getValue();
+            }
+            const newId = tabs.length > 0 ? Math.max(...tabs.map(t => t.id)) + 1 : 1;
+            const newTab = { id: newId, name: "Untitled Tab", content: "-- Wave interface is real." };
+            tabs.push(newTab);
+            activeTabId = newId;
+            if (window.editor) window.editor.setValue("-- Wave interface is real.");
+            renderTabs();
+            setTimeout(scrollToActiveTab, 50);
+        }
+
+        function closeTab(id) {
+            if (tabs.length === 1) return;
+            const index = tabs.findIndex(t => t.id === id);
+            tabs = tabs.filter(t => t.id !== id);
+            if (activeTabId === id) {
+                activeTabId = tabs[Math.max(0, index - 1)].id;
+                if (window.editor) window.editor.setValue(tabs.find(t => t.id === activeTabId).content);
+            }
+            renderTabs();
+        }
+
+        function scrollToActiveTab() {
+            const activeTab = document.querySelector('.tab-item.active');
+            if (activeTab) activeTab.scrollIntoView({ behavior: 'smooth', inline: 'center' });
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (document.activeElement.tagName === 'INPUT' || document.activeElement.closest('.monaco-editor')) return;
+            
+            const list = document.getElementById('tab-list');
+            if (e.key === 'ArrowLeft') {
+                list.scrollLeft -= 100;
+            } else if (e.key === 'ArrowRight') {
+                list.scrollLeft += 100;
+            }
+        });
+
+        document.getElementById('scroll-left-btn').onclick = () => document.getElementById('tab-list').scrollLeft -= 150;
+        document.getElementById('scroll-right-btn').onclick = () => document.getElementById('tab-list').scrollLeft += 150;
+
+        document.querySelectorAll('.action-btn').forEach(btn => {
+            btn.onmousedown = () => {
+                const inner = btn.querySelector('.btn-inner');
+                if (inner) {
+                    inner.classList.remove('animate-content-bounce');
+                    void inner.offsetWidth;
+                    inner.classList.add('animate-content-bounce');
+                }
+            };
+        });
+
+        const macStatusText = document.getElementById('mac-status-text');
+        const macStatusDot = document.getElementById('mac-status-dot');
+
+        function setMacStatus(attached, executorName) {
+            const label = attached ? (executorName || 'Connected') : 'Disconnected';
+            if (macStatusText) {
+                macStatusText.textContent = label;
+            }
+
+            if (macStatusDot) {
+                macStatusDot.style.background = attached ? 'rgba(113, 226, 160, 1)' : 'rgba(234,135,120,1)';
+            }
+        }
+
+        async function refreshMacStatus() {
+            const result = await window.electronAPI?.macStatus?.();
+            setMacStatus(!!result?.attached, result?.executor);
+        }
+
+        if (window.electronAPI?.onMacStatus) {
+            window.electronAPI.onMacStatus((payload) => {
+                setMacStatus(!!payload?.attached, payload?.executor);
+            });
+        }
+
+        if (window.electronAPI?.onMacMessage) {
+            window.electronAPI.onMacMessage((payload) => {
+                if (!payload) return;
+                if (payload.kind === 'error') {
+                    console.error('[MacSploit Error]', payload.message);
+                } else {
+                    console.log('[MacSploit Debug]', payload.message);
+                }
+            });
+        }
+
+        if (window.electronAPI?.onMacError) {
+            window.electronAPI.onMacError((payload) => {
+                console.error('[MacSploit Connection Error]', payload?.message || 'Unknown error');
+                setMacStatus(false);
+            });
+        }
+
+        if (window.electronAPI?.onMacClose) {
+            window.electronAPI.onMacClose(() => {
+                setMacStatus(false);
+            });
+        }
+
+        document.querySelector('.v249_613').onclick = async () => {
+            const script = window.editor ? window.editor.getValue() : '';
+            if (!script.trim()) return;
+
+            if (macStatusText) {
+                macStatusText.textContent = 'Connecting...';
+            }
+
+            const result = await window.electronAPI?.macExecute?.(script);
+            if (!result?.ok) {
+                console.error('[MacSploit Execute Failed]', result?.error || 'Unknown error');
+                setMacStatus(false);
+                return;
+            }
+
+            setMacStatus(true, result?.executor || 'Connected');
+            console.log('[MacSploit] Executed script.');
+        };
+
+        refreshMacStatus();
+        setInterval(refreshMacStatus, 2000);
+
+        document.querySelector('.v249_615').onclick = () => { if (window.editor) window.editor.setValue(''); };
+    </script>
+</body>
+</html>
